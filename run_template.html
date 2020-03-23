@@ -1,0 +1,164 @@
+<html>
+	<script language="Javascript">
+	
+	var runID = "{{ runID }}";
+		var imageCanvas;
+		var imageContect;
+		var image;
+		var wcs;
+	
+		// Call a function only when the page is fully loaded.
+		document.addEventListener('readystatechange', event => {
+		if (event.target.readyState === "complete") {
+			onLoad();
+		}
+
+		});
+		function wcsSolution() {
+		this.equinox = 0;	
+	}
+
+	function pad(number, digits) {
+	    beforeDecimalLength = number.toString().split('.')[0].length;
+    	return Array(Math.max(digits - beforeDecimalLength + 1, 0)).join(0) + number;
+	}
+
+
+	
+	function degreesToSexagesimal(raDeg, decDeg) {
+		ra = raDeg/15;
+		hours = Math.floor(ra);
+		minutes = (ra - Math.floor(ra)) * 60;
+		seconds = (minutes - Math.floor(minutes)) * 60;
+		minutes = Math.floor(minutes);
+		seconds = Math.round(seconds*100) / 100;
+					
+		dec = decDeg;
+		decDegrees = Math.floor(dec);
+		if (dec>0) decSign = "+";
+		else decSign = "-";
+		dec = Math.abs(dec);
+		decMinutes = (dec - Math.floor(dec)) * 60;
+		dec = Math.floor(dec);
+		decSeconds = (decMinutes - Math.floor(decMinutes)) * 60;
+		decMinutes = Math.floor(decMinutes);
+		
+		decSeconds = Math.round(decSeconds*100) / 100;
+		var sexString = "";
+		sexString+= pad(hours, 2) + ":" + pad(minutes,2) + ":" + pad(seconds, 2); 
+		sexString+= " " + decSign +  pad(dec,2) + ":" + pad(decMinutes,2) + ":" + pad(decSeconds,2);
+		
+		return sexString;
+
+	}
+
+
+	function wcsSolution() {
+		this.equinox = 0;	
+	}
+	
+	wcsSolution.prototype.init = function(data){
+		this.equinox = data.equinox;
+		this.x_ref = data.x_ref;
+		this.y_ref = data.y_ref;
+		this.ra = data.ra;
+		this.dec = data.dec;
+		this.CD_1_1 = data.CD_1_1;
+		this.CD_1_2 = data.CD_1_2;
+		this.CD_2_1 = data.CD_2_1;
+		this.CD_2_2 = data.CD_2_2;
+	}
+
+	wcsSolution.prototype.toString = function(){
+		outStr = "RA: " + this.ra + " DEC: " + this.dec;
+		return outStr;
+	}
+	
+	wcsSolution.prototype.pixelToWorld = function(x, y) {
+		abs_x = x - this.x_ref;
+		abs_y = y - this.y_ref;
+		world_x = this.CD_1_1 * abs_x + this.CD_1_2 * abs_y;
+		world_y = this.CD_2_1 * abs_x + this.CD_2_2 * abs_y;
+		
+		world_x = world_x + this.ra
+		world_y = world_y + this.dec
+		
+		worldCoord = {wx: world_x, wy: world_y}
+		
+		return worldCoord;
+	}
+	
+
+		function getJSON(url, callback) {
+                var xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.responseType = 'json';
+                    xhr.onload = function() {
+                        var status = xhr.status;
+                        if (status === 200) {
+                            callback(null, xhr.response);
+                        } else {
+                            callback(status, xhr.response);
+                        }
+                    };
+                xhr.send();
+            };    
+
+
+		function onLoad() {
+			console.log("Window loaded...");
+
+			getJSON(runID + ".json", dataLoaded);
+			imageCanvas = document.getElementById("imageCanvas");
+			imageContext = imageCanvas.getContext('2d');
+			imageContext.fillStyle = "blue";
+			imageContext.fillRect(0, 0, imageCanvas.width, imageCanvas.height);
+			imageCanvas.addEventListener('mousemove', mouseMoved);
+		}
+
+		function dataLoaded(err, data) {
+			console.log("JSON data follows...");
+			console.log(data);
+			image = new Image();
+			image.src = data.runImage;
+			image.onload = redrawCanvas;
+			wcs = new wcsSolution();
+			wcs.init(data.wcs);
+			console.log(wcs.toString());
+			testPixel = {'x': 200, 'y': 100};
+			console.log(testPixel);
+			console.log(wcs.pixelToWorld(testPixel.x, testPixel.y));
+			
+		}
+		
+		function redrawCanvas(){
+			console.log("image loaded...");
+			console.log("dimensions", image.width, image.height);
+			imageCanvas.width = image.width;
+			imageCanvas.height = image.height;
+			imageContext.drawImage(image, 0, 0);
+
+		}
+    	
+		function mouseMoved(event) {
+			mousePositionAbsolute = { x: event.offsetX, y: image.height - event.offsetY };
+
+			//mousePositionClient = { x: event.clientX, y: event.clientY };
+			//console.log(mousePositionAbsolute);
+			worldCoord = wcs.pixelToWorld(mousePositionAbsolute.x, mousePositionAbsolute.y);
+			worldLocationString = degreesToSexagesimal(worldCoord.wx, worldCoord.wy);
+			document.getElementById("mousePosition").innerHTML = "offset: " + JSON.stringify(mousePositionAbsolute) + "<br/>" + JSON.stringify(worldCoord)+  "<br/>" + worldLocationString;
+			// + "\nclient: "+ JSON.stringify(mousePositionClient);
+		}
+	</script>
+<body>
+<h1>{{ runID }}</h1>
+
+<!-- IMAGE AREA -->
+	<canvas id="imageCanvas" width="500" height="500">
+		Fallback content, in case the browser does not support Canvas.
+	</canvas>
+	<div id="mousePosition"></div>
+
+</body>
+</html>

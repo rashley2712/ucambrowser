@@ -8,11 +8,10 @@ def extractSources(data):
 	mean, median, std = sigma_clipped_stats(data, sigma=3.0)  
 	print("Mean {}, median {}, std {}".format(mean, median, std))
 	from photutils import DAOStarFinder
-	daofind = DAOStarFinder(fwhm=3.0, threshold=3.*std)  
+	daofind = DAOStarFinder(fwhm=3.0, threshold=4.*std)  
 	sources = daofind(data - median)  
 	for col in sources.colnames:
 		sources[col].info.format = '%.8g'  # for consistent table output
-	print(sources) 
 	return sources   
 
 

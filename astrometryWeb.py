@@ -169,9 +169,17 @@ if __name__ == "__main__":
 	referencePixel = float(header['CRPIX1']), float(header['CRPIX2'])
 			
 	CD_array = [ [header['CD1_1'], header['CD1_2']], [ header['CD2_1'], header['CD2_2'] ] ]
+
+	# Extract the SIP values
+	for i in range(3):
+		print("A_%d"%i)
 			
 	wcs.setSolution(equinox, referenceCoord, referencePixel, CD_array)
 	
+	testPixel = (200, 100)
+	test = wcs.getWorldCoord(testPixel)
+
+	print("test {}   maps to {}".format(testPixel, test))
 	runObject.addProperty('wcs', wcs.toJSON())		
 	runObject.save()
 	

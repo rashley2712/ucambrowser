@@ -33,6 +33,10 @@ class configClass():
 		for s in self.settings:
 			print(s)
 		
+	def getProperty(self, property):
+		if hasattr(self, property): return self.__getattribute__(property)
+		return False
+
 	def addSetting(self, name, type):
 		self.settings[name] = "test"
 
