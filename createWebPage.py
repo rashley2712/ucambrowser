@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import runlib, configlib
-import argparse, os
+import argparse, os, shutil
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description='Creates a web page for a specific run. Needs a runXXXX.json file.')
@@ -33,4 +33,12 @@ if __name__ == "__main__":
 		outFile.write(line)
 
 	outFile.close()
+
+	# Copy the .js files too
+	JSfiles = ['astrotools.js']
+	for f in JSfiles:
+		source = os.path.join(installDirectory, f)
+		destination = os.path.join(workingDirectory, f)
+		shutil.copyfile(source, destination)
+
 	runObject.save()

@@ -11,10 +11,10 @@ class wcsSolution:
 		self.ra = 0.0
 		self.dec = 0.0 
 		self.raDeg = 0.0
-		self.SIP_A = numpy.zeros((4, 4))
-		self.SIP_B = numpy.zeros((4, 4))
-		self.SIP_AP = numpy.zeros((4, 4))
-		self.SIP_BP = numpy.zeros((4, 4))
+		self.SIP_A = numpy.zeros((3, 3))
+		self.SIP_B = numpy.zeros((3, 3))
+		self.SIP_AP = numpy.zeros((3, 3))
+		self.SIP_BP = numpy.zeros((3, 3))
 		
 		self.linearTransform = [ [0.0, 0.0], [0.0, 0.0] ]
 		
@@ -92,26 +92,28 @@ class wcsSolution:
 	def getWorldSIP(self, position):
 		u = position[0] - self.pixReference[0]
 		v = position[1] - self.pixReference[1]
-		fuvArray = numpy.zeros((4, 4))
+		print("u: {} v:{}".format(u, v))
+		fuvArray = numpy.zeros((3, 3))
 		fuvArray[0][0] = 1
 		fuvArray[0][1] = v
 		fuvArray[0][2] = v*v
-		fuvArray[0][3] = v*v*v
 		fuvArray[1][0] = u
 		fuvArray[1][1] = u*v
 		fuvArray[1][2] = u*v*v
 		fuvArray[2][0] = u*u
 		fuvArray[2][1] = u*u*v
-		fuvArray[3][0] = u*u*u
-		
+		fuvArray[2][2] = u*u*v*v
+		print(fuvArray)
+		print(self.SIP_A)
 		uprime = numpy.sum(numpy.diagonal(numpy.dot(self.SIP_A, fuvArray)))
 		vprime = numpy.sum(numpy.diagonal(numpy.dot(self.SIP_B, fuvArray)))
 		
-		#print "u': " + str(uprime) 
-		#print "v': " + str(vprime) 
+		print("u': " + str(uprime)) 
+		print("v': " + str(vprime)) 
 		u = u + uprime
 		v = v + vprime
 		CD = numpy.array(self.linearTransform)
+		print("CD", CD)
 		pixel = numpy.array((u,v))
 		world = numpy.dot(CD,pixel)
 		world = (world[0] + self.raDeg, world[1] + self.dec)

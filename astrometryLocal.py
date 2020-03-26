@@ -28,6 +28,30 @@ if __name__ == "__main__":
 
 	print(runObject)
 
+	filename = os.path.join(config.getProperty('workingDirectory'), runObject.getProperty('stackedFITS'))
+	print("Opening the file: %s"%filename)
+	hdu = fits.open(filename)
+	print(hdu.info())
+	imageData = hdu[0].data
+	imageWidth, imageHeight = numpy.shape(hdu[0].data)
+	sources = sourcelib.extractSources(imageData)
+	# Write the sources to a simple text file
+	sourceList = []
+
+	for s in sources:
+		source = { 'x' : float(s['xcentroid']), 'y': float(s['ycentroid']), 'flux' : float(s['flux'])}
+		sourceList.append(source)
+
+	sourceList = sorted(sourceList, key=lambda object: object['flux'], reverse = True)
+
+	catalogString = ""
+	for s in sourceList:
+		print("{:.2f} {:.2f} ({:.2f})".format(s['x'], s['y'], s['flux']))
+		catalogString+= "{:.2f} {:.2f}\n".format(s['x'], s['y'])
+
+	runObject.addProperty("masterCatalog",sourceList)
+	runObject.save()
+
 	workingDir = config.getProperty("workingDirectory")
 	if workingDir: print("Working directory is:", workingDir)
 	else: workingDir = "."
@@ -39,10 +63,7 @@ if __name__ == "__main__":
 	wcsCommand = ["solve-field"]
 	wcsCommand.append(stackedFilename)
 	wcsCommand.append("--overwrite")
-	wcsCommand.append("--crpix-x")
-	wcsCommand.append("200")
-	wcsCommand.append("--crpix-y")
-	wcsCommand.append("200")
+	wcsCommand.append("--crpix-center")
 	wcsCommand.append("-T")
 	wcsCommand.append("-v")
 	
@@ -115,12 +136,14 @@ if __name__ == "__main__":
 	print("Astropy result: ", apWorld)
 	print("Astropy result: ", wcs.degToSex(apWorld))
 
-	testPixel = (156,300)
+	testPixel = (445,119)
 	test = wcs.getWorldCoord(testPixel)
 	testSIP = wcs.getWorldSIP(testPixel)
 
 	print("test {}   maps to {}".format(testPixel, test))
 	print("test {}   maps to {}".format(testPixel, wcs.degToSex(test)))
+	print("test {}   maps to SIP {}".format(testPixel, testSIP))
+	print("test {}   maps to SIP {}".format(testPixel, wcs.degToSex(testSIP)))
 	
 	testPixel = (5,430)
 	test = wcs.getWorldCoord(testPixel)
@@ -128,6 +151,8 @@ if __name__ == "__main__":
 
 	print("test {}   maps to {}".format(testPixel, test))
 	print("test {}   maps to {}".format(testPixel, wcs.degToSex(test)))
+	print("test {}   maps to SIP {}".format(testPixel, testSIP))
+	print("test {}   maps to SIP {}".format(testPixel, wcs.degToSex(testSIP)))
 	print(CD_array)
 
 	runObject.addProperty('wcs', wcs.toJSON())		
